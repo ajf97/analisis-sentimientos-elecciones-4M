@@ -1,7 +1,3 @@
-# Plantilla del curso de desarrollo ágil 
+# Análisis de sentimientos de las elecciones a la Asamblea de Madrid de 2021
 
-Plantilla para el [curso de desarrollo ágil](https://jj.github.io/curso-tdd)
-
-Contiene el mínimo para un proyecto, incluyendo una GitHub action que
-comprueba la presencia de ciertos ficheros, un directorio para los
-tests, y otro para la documentación.
+Este repositorio contiene el código del análisis de las opiniones vertidas en Twitter durante la jornada electoral.
