@@ -22,13 +22,12 @@ api = tw.API(auth, wait_on_rate_limit=True,
 
 # Define the topic search and date variables
 search_topic = "#Elecciones4M"
-date_since = "2021-05-04"
+date_from = "202105040900"
+date_to = "202105042300"
 
 # Collect tweets
-tweets = tw.Cursor(api.search, q=search_topic, lang="es",
-since=date_since).items(5)
-
-tweets_list = [tweet.text for tweet in tweets]
-
-for t in tweets_list:
-    print(t)
+tweets = tw.Cursor(api.search_30_day,
+environment_name='dev',
+ query=search_topic,
+fromDate=date_from,
+toDate=date_to).items(5)
