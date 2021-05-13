@@ -30,7 +30,7 @@ def search_topic(api, topic, items, date_from=None, date_to=None):
         environment_name="dev",
         query=topic,
         fromDate=date_from,
-        toDate=date_to,
+        toDate=date_to
     ).items(items)
 
     return tweets
@@ -40,7 +40,7 @@ def search_topic(api, topic, items, date_from=None, date_to=None):
 topic = "#Elecciones4M"
 date_from = "202105040900"
 date_to = "202105042300"
-n_items = 5
+n_items = 1000
 
 api = setup()
 tweets = search_topic(api, topic, n_items, date_from, date_to)
