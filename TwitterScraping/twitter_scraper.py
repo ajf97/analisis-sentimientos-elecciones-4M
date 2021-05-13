@@ -50,9 +50,13 @@ tweets = [tweet for tweet in tweets]
 data = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=["Tweets"])
 
 
-data['len'] = np.array([len(tweet.text) for tweet in tweets])
-data['ID'] = np.array([tweet.id for tweet in tweets])
-data['Date'] = np.array([tweet.created_at for tweet in tweets])
-data['Source'] = np.array([tweet.source for tweet in tweets])
-data['Likes'] = np.array([tweet.favorite_count for tweet in tweets])
-data['RTs'] = np.array([tweet.retweet_count for tweet in tweets])
+data["len"] = np.array([len(tweet.text) for tweet in tweets])
+data["ID"] = np.array([tweet.id for tweet in tweets])
+data["Date"] = np.array([tweet.created_at for tweet in tweets])
+data["Source"] = np.array([tweet.source for tweet in tweets])
+data["Likes"] = np.array([tweet.favorite_count for tweet in tweets])
+data["RTs"] = np.array([tweet.retweet_count for tweet in tweets])
+
+# %% Export dataframe to csv
+
+data.to_csv(r"data.csv", index=False, header=True)
