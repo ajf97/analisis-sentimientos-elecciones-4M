@@ -106,4 +106,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Credentials file
+credentials.py
+
 *~
