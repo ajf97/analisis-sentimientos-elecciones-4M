@@ -24,7 +24,7 @@
 # %% [markdown]
 # ## Introducción
 #
-# El pasado martes 4 de mayo se celebraban las elecciones a la Asamblea de Madrid 2021. Estas elecciones son de alguna forma excepcionales y polémicas desde el mismo instante de su convocatoria. Esto se debe a la pandemia y a la polarización política de los últimos años en España. Así pues, se han saldado con la victoria de los partidos derecha y la derrota de la izquierda, obligando a dos de los principales candidatos a abandonar la política. También hemos asistido a la desaparición del partido Ciudadanos de la Asamblea, empeorando aún más su crisis como partido. 
+# El pasado martes 4 de mayo se celebraban las elecciones a la Asamblea de Madrid 2021. Estas elecciones son de alguna forma excepcionales y polémicas desde el mismo instante de su convocatoria. Esto se debe a la pandemia y a la polarización política de los últimos años en España. Así pues, se han saldado con la victoria de los partidos derecha y la derrota de la izquierda, obligando a dos de los principales candidatos a abandonar la política. También hemos asistido a la desaparición del partido Ciudadanos de la Asamblea, empeorando aún más su crisis como partido.
 #
 # Por si fuera poco, la campaña electoral se desarrolló bajo un clima de mucha tensión, ya que algunos políticos del país recibieron sobres con balas. En las redes sociales, esta polarización se manifiesta más. Es frecuente ver insultos y descalificaciones en la mayoría de los mensajes.
 #
@@ -42,19 +42,19 @@
 # * **Pandas**: librería para el análisis de los datos.
 
 # %%
-import pandas as pd
-import numpy as np
-from PIL import Image
-from wordcloud import WordCloud
-from sentiment_analysis_spanish import sentiment_analysis
-import matplotlib.pyplot as plt
 import random
-
-from nltk.corpus import stopwords
-from nltk import word_tokenize
-from nltk.stem import SnowballStemmer
 from string import punctuation
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from emoji.unicode_codes.es import EMOJI_UNICODE_SPANISH
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from PIL import Image
+from sentiment_analysis_spanish import sentiment_analysis
+from wordcloud import WordCloud
 
 # Tienes que descargarte las stopwords primero usando nltk.download()
 
@@ -68,7 +68,7 @@ from emoji.unicode_codes.es import EMOJI_UNICODE_SPANISH
 
 # %%
 # Importamos los datos a un Dataframe
-data = pd.read_csv('data/data.csv', index_col='ID')
+data = pd.read_csv("data/data.csv", index_col="ID")
 
 data.head()
 
@@ -85,21 +85,25 @@ data.isna().any()
 
 # %%
 # Eliminar la cadena 'RT' en los tweets para quedarnos con la información relevante
-data['Tweets'] = data['Tweets'].str.replace(r'RT.*:', '', regex=True)
+data["Tweets"] = data["Tweets"].str.replace(
+    r"RT.*:",
+    "",
+    regex=True,
+)
 
 # %%
 # Eliminar saltos de línea y retorno para tenerlo todo en una frase
-data['Tweets'] = data['Tweets'].str.replace('\n', '')
-data['Tweets'] = data['Tweets'].str.replace('\r', '')
+data["Tweets"] = data["Tweets"].str.replace("\n", "")
+data["Tweets"] = data["Tweets"].str.replace("\r", "")
 
 
 # %%
 # Eliminar etiqueta #Elecciones4M
-data['Tweets'] = data['Tweets'].str.replace('#Elecciones4M', '')
+data["Tweets"] = data["Tweets"].str.replace("#Elecciones4M", "")
 
 # %%
 # Eliminar links
-links_index = data[data['Tweets'].str.contains(r'//t\.co.*', regex=True)].index
+links_index = data[data["Tweets"].str.contains(r"//t\.co.*", regex=True)].index
 data = data.drop(links_index)
 
 # %% [markdown]
@@ -107,23 +111,35 @@ data = data.drop(links_index)
 
 # %%
 # Seguimos eliminando links
-links_index = data[data['Tweets'].str.contains('//t.c…')].index
+links_index = data[data["Tweets"].str.contains("//t.c…")].index
 data = data.drop(links_index)
 data.shape
 
 # %%
 # Eliminamos filas con ruido
-data = data.drop([1389714946599137283, 1389714670081265669, 1389714532499697667,
-1389715033786040322, 1389714949367336965, 1389714934095880192, 1389714915737448451,
-1389714894241554438, 1389714495413555202, 1389715170969231361, 1389715027356266502])
+data = data.drop(
+    [
+        1389714946599137283,
+        1389714670081265669,
+        1389714532499697667,
+        1389715033786040322,
+        1389714949367336965,
+        1389714934095880192,
+        1389714915737448451,
+        1389714894241554438,
+        1389714495413555202,
+        1389715170969231361,
+        1389715027356266502,
+    ]
+)
 
 # %%
 # Eliminar duplicados
-data = data.drop_duplicates(subset=['Tweets'])
+data = data.drop_duplicates(subset=["Tweets"])
 
 # %%
 # Exportamos los datos preparados
-data.to_csv('data/data_prepared.csv')
+data.to_csv("data/data_prepared.csv")
 
 # %% [markdown]
 # ## Procesamiento del texto
@@ -132,51 +148,62 @@ data.to_csv('data/data_prepared.csv')
 #
 
 # %%
-spanish_stopwords = stopwords.words('spanish')
+spanish_stopwords = stopwords.words("spanish")
 
 # Transformamos cada palabra en su raíz
-stemmer = SnowballStemmer('spanish')
+stemmer = SnowballStemmer("spanish")
 
 # Eliminamos signos puntuación, números y emojis
 emoji_list = list(EMOJI_UNICODE_SPANISH.values())
 
 non_words = list(punctuation)
-non_words.extend(['¿', '?'])
+non_words.extend(["¿", "?"])
 non_words.extend(map(str, range(10)))
 non_words.extend(emoji_list)
 
 # %%
-tweets_text = data['Tweets']
+tweets_text = data["Tweets"]
 tweets_text = tweets_text.apply(word_tokenize)
 
-#tweets_text.head()
+# tweets_text.head()
 
 # %%
 # Importamos la imagen del logo de Twitter
-twitter_logo = np.array(Image.open('images/twitter_logo.png'))
+twitter_logo = np.array(Image.open("images/twitter_logo.png"))
 
 figure = plt.figure()
 figure.set_figwidth(14)
 figure.set_figheight(18)
 
 plt.imshow(twitter_logo)
-plt.axis('off')
+plt.axis("off")
 plt.show()
 
 
 # %%
 # Función para generar el color azul de la nube de tweets
-def blue_color(word, font_size, position, orientation, ramdom_state=None, **kwargs):
+def blue_color(
+    word,
+    font_size,
+    position,
+    orientation,
+    ramdom_state=None,
+    **kwargs,
+):
     return "hsl(210, 100%%, %d%%)" % random.randint(50, 70)
 
 
 # %%
-tweets_long_string = data['Tweets'].tolist()
+tweets_long_string = data["Tweets"].tolist()
 tweets_long_string = " ".join(tweets_long_string)
 
 
 # %%
-twitter_wc = WordCloud(background_color='white', max_words=1500, mask=twitter_logo)
+twitter_wc = WordCloud(
+    background_color="white",
+    max_words=1500,
+    mask=twitter_logo,
+)
 
 # Generamos la nube de palabras
 twitter_wc.generate(tweets_long_string)
@@ -186,10 +213,12 @@ figure = plt.figure()
 figure.set_figwidth(14)
 figure.set_figheight(18)
 
-plt.imshow(twitter_wc.recolor(color_func=blue_color, random_state=3),interpolation="bilinear")
+plt.imshow(
+    twitter_wc.recolor(color_func=blue_color, random_state=3),
+    interpolation="bilinear",
+)
 plt.axis("off")
 plt.show()
-
 
 
 # %%
