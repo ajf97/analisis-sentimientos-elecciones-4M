@@ -43,15 +43,15 @@
 
 # %%
 import random
+from collections import Counter
 from string import punctuation
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from emoji.unicode_codes.es import EMOJI_UNICODE_SPANISH
-from nltk import word_tokenize
+from nltk import FreqDist, word_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import SnowballStemmer
 from PIL import Image
 from sentiment_analysis_spanish import sentiment_analysis
 from wordcloud import WordCloud
@@ -150,22 +150,51 @@ data.to_csv("data/data_prepared.csv")
 # %%
 spanish_stopwords = stopwords.words("spanish")
 
-# Transformamos cada palabra en su raíz
-stemmer = SnowballStemmer("spanish")
-
 # Eliminamos signos puntuación, números y emojis
 emoji_list = list(EMOJI_UNICODE_SPANISH.values())
 
 non_words = list(punctuation)
-non_words.extend(["¿", "?"])
+non_words.extend(["¿", "?", "…", "", "“", "«" "»", "•", "¡", "”"])
 non_words.extend(map(str, range(10)))
+emoji_list.extend(["🗳️", "🗣️", "🗳", "➡️"])
 non_words.extend(emoji_list)
 
 # %%
+
+# Tokenizamos todas las palabras
+
 tweets_text = data["Tweets"]
 tweets_text = tweets_text.apply(word_tokenize)
 
-# tweets_text.head()
+tweets_text = tweets_text.to_list()
+tweets_text = [j for i in tweets_text for j in i]
+# %%
+
+# Función para eliminar signos de puntuación y emojis
+
+
+def drop_nonwords(tokens, non_words):
+    tk_nonwords = []
+
+    for word in tokens:
+        text = "".join([letter for letter in word if letter not in non_words])
+        if text != "":
+            tk_nonwords.append(text.lower())
+
+    return tk_nonwords
+
+
+tweets_text = drop_nonwords(tweets_text, non_words)
+
+# Eliminamos las stopwords
+tweets_text = [word for word in tweets_text if word not in spanish_stopwords]
+
+# %%
+
+# Calculamos la frecuencia de palabras
+frecuency = FreqDist(tweets_text)
+print(frecuency.most_common(100))
+
 
 # %%
 # Importamos la imagen del logo de Twitter
@@ -194,7 +223,7 @@ def blue_color(
 
 
 # %%
-tweets_long_string = data["Tweets"].tolist()
+tweets_long_string = tweets_text
 tweets_long_string = " ".join(tweets_long_string)
 
 
@@ -221,4 +250,66 @@ plt.axis("off")
 plt.show()
 
 
+# %% [markdown]
+## Análisis de sentimientos
+
 # %%
+
+# Añadimos nueva columna al DataFrame con los valores de probabilidad
+
+sentiment = sentiment_analysis.SentimentAnalysisSpanish()
+data["sentiment_probability"] = data["Tweets"].apply(sentiment.sentiment)
+
+data.head()
+
+# %%
+
+
+def probability_labeler(probability):
+    if probability > 0.5:
+        return "Positive"
+    elif probability == 0.5:
+        return "Neutral"
+    elif probability < 0.5:
+        return "Negative"
+
+
+# Añadimos otra columna con la etiqueta de los sentimientos
+
+data["sentiment"] = data["sentiment_probability"].apply(probability_labeler)
+
+data.head()
+
+# %%
+
+print(Counter(data["sentiment"].to_list()))
+# %%
+
+# Creamos un nuevo dataframe para el gráfico de barras
+
+bar_chart = (
+    data["sentiment"]
+    .value_counts()
+    .rename_axis("Sentiment")
+    .to_frame("Total Tweets")
+    .reset_index()
+)
+
+bar_chart
+# %%
+
+# Mostramos el gráfico de barras
+
+bar = plt.bar(
+    bar_chart["Sentiment"],
+    bar_chart["Total Tweets"],
+    align="center",
+    alpha=0.5,
+)
+
+bar[0].set_color("r")
+bar[1].set_color("b")
+
+plt.ylabel("Total Tweets")
+plt.title("Distribution of Sentiments Results")
+plt.show()
