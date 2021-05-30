@@ -251,10 +251,9 @@ plt.show()
 
 
 # %% [markdown]
-## Análisis de sentimientos
+# # Análisis de sentimientos
 
 # %%
-
 # Añadimos nueva columna al DataFrame con los valores de probabilidad
 
 sentiment = sentiment_analysis.SentimentAnalysisSpanish()
@@ -262,9 +261,8 @@ data["sentiment_probability"] = data["Tweets"].apply(sentiment.sentiment)
 
 data.head()
 
+
 # %%
-
-
 def probability_labeler(probability):
     if probability > 0.5:
         return "Positive"
@@ -281,7 +279,6 @@ data["sentiment"] = data["sentiment_probability"].apply(probability_labeler)
 data.head()
 
 # %%
-
 print(Counter(data["sentiment"].to_list()))
 # %%
 
