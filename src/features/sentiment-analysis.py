@@ -15,7 +15,7 @@
 # ---
 
 # %% [markdown]
-# <center><img src="images/banner.jpg"></center>
+# <center><img src="../../reports/figures/banner.jpg"></center>
 #
 # <center><h1>Análisis de sentimientos de las elecciones a la Asamblea de Madrid 2021</h1></center>
 #
@@ -68,7 +68,7 @@ from wordcloud import WordCloud
 
 # %%
 # Importamos los datos a un Dataframe
-data = pd.read_csv("data/data.csv", index_col="ID")
+data = pd.read_csv("../../data/raw/data.csv", index_col="ID")
 
 data.head()
 
@@ -139,7 +139,7 @@ data = data.drop_duplicates(subset=["Tweets"])
 
 # %%
 # Exportamos los datos preparados
-data.to_csv("data/data_prepared.csv")
+data.to_csv("../../data/processed/data_prepared.csv")
 
 # %% [markdown]
 # ## Procesamiento del texto
@@ -198,7 +198,7 @@ print(frecuency.most_common(100))
 
 # %%
 # Importamos la imagen del logo de Twitter
-twitter_logo = np.array(Image.open("images/twitter_logo.png"))
+twitter_logo = np.array(Image.open("../../reports/figures/twitter_logo.png"))
 
 figure = plt.figure()
 figure.set_figwidth(14)
