@@ -22,6 +22,16 @@
 #
 
 # %% [markdown]
+# ## Índice
+#
+# * [Introducción](#1)
+# * [⬇️ Extracción de Tweets](#2)
+# * [🧹 Limpieza de datos](#3)
+# * [📃 Procesamiento del texto](#4)
+# * [😁🤬 Análisis de sentimientos](#5)
+
+# %% [markdown]
+# <a id="1"></a>
 # ## Introducción
 #
 # El pasado martes 4 de mayo se celebraban las elecciones a la Asamblea de Madrid 2021. Estas elecciones son de alguna forma excepcionales y polémicas desde el mismo instante de su convocatoria. Esto se debe a la pandemia y a la polarización política de los últimos años en España. Así pues, se han saldado con la victoria de los partidos derecha y la derrota de la izquierda, obligando a dos de los principales candidatos a abandonar la política. También hemos asistido a la desaparición del partido Ciudadanos de la Asamblea, empeorando aún más su crisis como partido.
@@ -39,7 +49,9 @@
 # Para conseguir nuestro objetivo, necesitamos las siguientes librerías:
 #
 # * **Tweepy**: la usaremos para descargar los tweets utilizando la API de Twitter.
-# * **Pandas**: librería para el análisis de los datos.
+# * **Pandas**: librería para gestionar los datos.
+# * **NLTK**: es un conjunto de bibliotecas para realizar procesamiento del lenguaje natural.
+# * **sentiment-spanish**: paquete con el modelo para el análisis de sentimientos. Este paquete ha sido creado por @HugoJBello y se puede encontrar en este [repositorio](https://github.com/sentiment-analysis-spanish/sentiment-spanish)
 
 # %%
 import random
@@ -59,9 +71,65 @@ from wordcloud import WordCloud
 # Tienes que descargarte las stopwords primero usando nltk.download()
 
 # %% [markdown]
-# ## TODO: Extracción de tweets
+# <a id="2"></a>
+#
+# ## ⬇️ Extracción de tweets
+#
+# Para descargar los *tweets* es necesario utilizar la API de Twitter. Esta API permite descargar todo tipo de información, desde nuestro propio perfil hasta datos de tendencias. La información que descargamos se puede personalizar utilizando las distintas funciones de la librería `tweepy`.
+#
+# Para usar la API hay que registrarse en la página de desarrolladores [](https://developer.twitter.com/) y crear una app. En el formulario nos pedirán información básica como el nombre, descripción y el uso que se le va a dar. Esto último se hace para evitar usos maliciosos de la API 😈.
+#
+# Una vez creada la app, se generarán los *tokens* para identificar nuestra cuenta. Es **muy importante** que guardes estos tokens en un lugar seguro, ya que solo se generarán una vez. Si los pierdes, tendrás que volver a generarlos. En este proyecto, se ha creado un archivo en la ruta `src/data/credentials.py` (no disponible en GitHub) que contiene los *tokens*. El contenido del fichero sigue la siguiente estructura:
+#
+# ```python
+#
+# # Twitter App access keys for @user
+#
+# # Consume:
+# CONSUMER_KEY = ""
+# CONSUMER_SECRET = ""
+#
+# # Access:
+# ACCESS_TOKEN = ""
+# ACCESS_TOKEN_SECRET = ""
+# ```
+#
+# El fichero `src/data/twitter_scraper.py` contiene las líneas de código necesarias para comunicarse con la API y descargarse los tweets.
+#
+# ```python
+# import credentials as cr
+#
+# def setup():
+#     """
+#     Setup the Twitter's API with the keys provided in credentials.py
+#     """
+#
+#     # Authentication
+#     auth = tw.OAuthHandler(cr.CONSUMER_KEY, cr.CONSUMER_SECRET)
+#     auth.set_access_token(cr.ACCESS_TOKEN, cr.ACCESS_TOKEN_SECRET)
+#
+#     api = tw.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+#     return api
+#
+#
+# def search_topic(api, topic, items, date_from=None, date_to=None):
+#     # Collect tweets
+#     tweets = tw.Cursor(
+#         api.search_30_day,
+#         environment_name="dev",
+#         query=topic,
+#         fromDate=date_from,
+#         toDate=date_to,
+#     ).items(items)
+#
+#     return tweets
+# ```
+#
+# La función `setup` configura e inicializa la API con las credenciales. Esta función devuelve la API configurada y lista para usarse. Finalmente, la función `search_topic` utiliza el método `Cursor` de Tweepy para evitar que la API nos devuelva los datos de una sola página. Para este proyecto, se ha usado la API premium `search_30_day`, que permite buscar los tweets en el último mes. Para usar esta API hay que crear un entorno de desarrollo en la página de desarrolladores de Twitter.
 
 # %% [markdown]
+# <a id="3"></a>
+#
 # ## 🧹 Limpieza de datos
 #
 # Una vez extraídos los tweets en un archivo CSV, el siguiente paso consiste en eliminar aquellos datos que no son importantes para el análisis. Para ello, vamos a usar la librería `Pandas`, que nos permitirá gestionar los tweets en tablas llamadas *Dataframes*.
@@ -142,10 +210,15 @@ data = data.drop_duplicates(subset=["Tweets"])
 data.to_csv("../../data/processed/data_prepared.csv")
 
 # %% [markdown]
-# ## Procesamiento del texto
+# <a id="4"></a>
 #
-# Después de limpiar los datos, tenemos que hacer el procesamiento del texto.
+# ## 📃 Procesamiento del texto
 #
+# Después de limpiar los datos, tenemos que hacer el procesamiento del texto. En este apartado lo que haremos será terminar de limpiar aquellas palabras y caracteres que no son útiles como:
+#
+# * **Stop words**: las *stop words* son palabras muy frecuentes pero su valor sintáctico es escaso. Dentro de estas palabras encontramos preposiciones y artículos del castellano.
+# * Signos de puntuación.
+# * Emojis.
 
 # %%
 spanish_stopwords = stopwords.words("spanish")
@@ -159,8 +232,10 @@ non_words.extend(map(str, range(10)))
 emoji_list.extend(["🗳️", "🗣️", "🗳", "➡️"])
 non_words.extend(emoji_list)
 
-# %%
+# %% [markdown]
+# El siguiente paso consiste en tokenizar las palabras. Este proceso consiste en separar las palabras de una frase y tratarlas individualmente. De esta forma, podemos usar los tokens para entrenar al modelo y calcular la frecuencia de las palabras.
 
+# %%
 # Tokenizamos todas las palabras
 
 tweets_text = data["Tweets"]
@@ -169,7 +244,6 @@ tweets_text = tweets_text.apply(word_tokenize)
 tweets_text = tweets_text.to_list()
 tweets_text = [j for i in tweets_text for j in i]
 # %%
-
 # Función para eliminar signos de puntuación y emojis
 
 
@@ -190,11 +264,13 @@ tweets_text = drop_nonwords(tweets_text, non_words)
 tweets_text = [word for word in tweets_text if word not in spanish_stopwords]
 
 # %%
-
 # Calculamos la frecuencia de palabras
 frecuency = FreqDist(tweets_text)
 print(frecuency.most_common(100))
 
+
+# %% [markdown]
+# Hemos visto que con `FreqDist` podemos saber la frecuencia de apariciones de una palabra. Para mejorar la visualización, crearemos una nube de palabras usando el logotipo de Twitter.
 
 # %%
 # Importamos la imagen del logo de Twitter
@@ -251,7 +327,19 @@ plt.show()
 
 
 # %% [markdown]
-# # Análisis de sentimientos
+# Entre las palabras más frecuentes destacamos `madrid`, `elecciones`,`ayuso`, `pablo iglesias`, `libertad`. Este es un comportamiento normal, puesto que casi todos los tweets obtenidos son posteriores al recuento de votos. En esos momentos, la candidata del PP, Isabel Díaz Ayuso, ganaba las elecciones y el candidato de Unidas Podemos, Pablo Iglesias, anunciaba su retirada de la política. La palabra `libertad` forma parte del lema de campaña 'Comunismo o libertad', usado por el PP. Otras palabras que tienen menos fuerza son `vox` y `psoe`. Estos dos partidos también han sido afectados por los resultados. En el caso de VOX, puede pactar con el PP para formar gobierno, y el PSOE pierde su puesto como líder de los partidos de izquierda a favor de Más Madrid. Por otro lado, también se pueden apreciar los típicos insultos que solemos ver en las campañas electorales como `fascista` o `cucaracha`.
+
+# %% [markdown]
+# <a id="5"></a>
+#
+# ## 😁🤬 Análisis de sentimientos
+
+# %% [markdown]
+# Para hacer el análisis de sentimientos, vamos a usar un modelo preentrenado de la librería `sentiment-spanish`. Esta librería utiliza un clasificador Naive Bayes para el modelo. El modelo ha sido entrenado con 800k reseñas de usuarios de las páginas eltenedor, decathlon, tripadvisor, filmaffinity y ebay. La salida del modelo da valores de probabilidad entre 0 y 1:
+#
+# * 0 si la opinión es **muy negativa**.
+# * 0.5 si es neutral.
+# * 1 si la opinión es fantástica.
 
 # %%
 # Añadimos nueva columna al DataFrame con los valores de probabilidad
@@ -261,6 +349,9 @@ data["sentiment_probability"] = data["Tweets"].apply(sentiment.sentiment)
 
 data.head()
 
+
+# %% [markdown]
+# Al mostrar solo las 5 primeras filas del dataframe, podemos ver que las opiniones son muy negativas. Y no es para menos, porque si vemos los mensajes, nos encontramos a gente que se queja de la victoria del PP en un barrio obrero, otro que tiene mucho asco y un usuario encantador que manda a otra gente a meterse los aplausos por zonas delicadas del cuerpo humano 😂.
 
 # %%
 def probability_labeler(probability):
@@ -281,7 +372,6 @@ data.head()
 # %%
 print(Counter(data["sentiment"].to_list()))
 # %%
-
 # Creamos un nuevo dataframe para el gráfico de barras
 
 bar_chart = (
@@ -310,3 +400,18 @@ bar[1].set_color("b")
 plt.ylabel("Total Tweets")
 plt.title("Distribution of Sentiments Results")
 plt.show()
+
+# %% [markdown]
+# Si hacemos un gráfico de barras, podemos ver que la mayoría de las opiniones expresadas en Twitter son negativas. Este es un comportamiento muy frecuente en los últimos años, donde la polarizacion política ha ido en aumento. Por último, vamos a ver algunos ejemplos más de tweets publicados.
+
+# %%
+data[
+    [
+        "Tweets",
+        "sentiment",
+        "sentiment_probability",
+    ]
+].sample(20, random_state=60)
+
+# %% [markdown]
+# Vemos como el modelo clasifica los sentimientos correctamente en la mayoría de casos. Sin embargo, también existen falsos negativos y positivos. Por ejemplo, vemos la fila con ID 1389714191007854593 donde el tweet pertenece claramente a un periódico. El contenido del mensaje indica la posible victoria de Ayuso, y ha sido marcado como negativo en lugar de neutral. También vemos el tweet 1389714307588440066, que ha sido etiquetado como positivo en lugar de negativo, ya que el usuario no ha aceptado el resultado.
