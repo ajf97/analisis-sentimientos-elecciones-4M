@@ -2,10 +2,11 @@ __author__ = "Alejandro Jerónimo"
 
 # %% Import libraries
 
-import credentials as cr
-import tweepy as tw
-import pandas as pd
 import numpy as np
+import pandas as pd
+import tweepy as tw
+
+import credentials as cr
 
 # %% API setup
 
@@ -30,7 +31,7 @@ def search_topic(api, topic, items, date_from=None, date_to=None):
         environment_name="dev",
         query=topic,
         fromDate=date_from,
-        toDate=date_to
+        toDate=date_to,
     ).items(items)
 
     return tweets
@@ -59,4 +60,4 @@ data["RTs"] = np.array([tweet.retweet_count for tweet in tweets])
 
 # %% Export dataframe to csv
 
-data.to_csv(r"data.csv", index=False, header=True)
+data.to_csv("../../data/raw/data.csv", index=False, header=True)
